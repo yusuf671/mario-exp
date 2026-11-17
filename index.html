@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Petualangan PAI Kelas 6</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(#79d8ff,#d9f5ff 65%,#80c957 65%);font-family:system-ui,Arial;color:#173b2c}
+header{text-align:center;padding:12px}h1{margin:0;color:#b52c24;text-shadow:2px 2px #fff;font-size:clamp(24px,5vw,42px)}header p{margin:2px;font-weight:700}
+.wrap{max-width:980px;margin:auto;padding:10px}.panel{background:#fffdf0;border:4px solid #388b43;border-radius:18px;padding:14px;box-shadow:0 6px 0 #236b35}
+#start{text-align:center}.hero{font-size:76px;line-height:1.2}input{padding:12px;border:2px solid #84b95c;border-radius:10px;text-align:center;font-size:16px;width:min(300px,90%);margin:10px}
+button{border:0;border-radius:12px;background:#ffcf43;color:#543a00;font-weight:900;padding:12px 18px;box-shadow:0 4px #c28c1c;cursor:pointer;font-size:15px}button:active{transform:translateY(3px);box-shadow:0 1px #c28c1c}
+.hidden{display:none!important}.hud{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap;font-weight:900;margin-bottom:10px}.hud span{background:#e9f6d8;padding:8px 12px;border-radius:10px;border:2px solid #a6d078}
+canvas{display:block;width:100%;height:auto;border:4px solid #347c39;border-radius:12px;background:#85d9ff;image-rendering:pixelated;touch-action:pan-y}
+#questionBox{margin-top:12px;background:#fff;border:3px solid #f0c34c;border-radius:14px;padding:14px}
+#question{font-weight:900;font-size:19px;margin:4px 0 12px}.answers{display:grid;grid-template-columns:1fr 1fr;gap:9px}.answers button{text-align:left;background:#e7f2ff;color:#17476a;box-shadow:0 4px #9dbbd4}
+#feedback{min-height:26px;text-align:center;font-weight:900;margin-top:10px}
+.controls{display:flex;justify-content:center;gap:9px;flex-wrap:wrap;margin-top:12px}
+#end{text-align:center}.small{font-size:13px;color:#57715b}
+.touch{display:flex;justify-content:center;gap:14px;margin-top:9px}.touch button{font-size:22px;min-width:70px}
+@media(max-width:600px){.answers{grid-template-columns:1fr}header{padding:8px}}
+</style>
+</head>
+<body>
+<header><h1>🍄 PETUALANGAN PAI 🍄</h1><p>Game Platformer Edukasi PAI Kelas 6</p></header>
+<div class="wrap">
+<section id="start" class="panel">
+ <div class="hero">🧑🏻‍🚀⭐🍄</div>
+ <h2>Selamat Datang, Pahlawan PAI!</h2>
+ <p>Berlari, melompat, kumpulkan koin, dan jawab tantangan PAI untuk menyelamatkan Kerajaan Ilmu.</p>
+ <input id="player" maxlength="20" placeholder="Masukkan nama pemain">
+ <p><button onclick="begin()">MULAI PETUALANGAN ▶</button> <button onclick="guide()">PETUNJUK</button></p>
+ <p class="small">Gunakan tombol panah / A-D untuk bergerak dan Spasi untuk melompat. Di HP gunakan tombol layar.</p>
+</section>
+<section id="play" class="panel hidden">
+ <div class="hud"><span>👤 <b id="pname">Pemain</b></span><span>🪙 <b id="coins">0</b></span><span>⭐ Skor <b id="score">0</b></span><span>❤️ <b id="lives">3</b></span><span>🏁 <b id="stage">1/10</b></span></div>
+ <canvas id="game" width="900" height="360"></canvas>
+ <div class="touch"><button id="left">◀</button><button id="jump">⬆</button><button id="right">▶</button></div>
+ <div id="questionBox"><div class="small" id="qnum">TANTANGAN 1 DARI 10</div><div id="question">Lewati rintangan untuk menemukan soal!</div><div class="answers" id="answers"></div><div id="feedback">Jelajahi dunia dan sentuh bendera untuk membuka soal.</div></div>
+ <div class="controls"><button onclick="restart()">↻ ULANGI</button><button onclick="home()">⌂ MENU</button></div>
+</section>
+<section id="end" class="panel hidden"></section>
+</div>
+<script>
+const canvas=document.getElementById('game'),ctx=canvas.getContext('2d');
+const questions=[
+["Apa arti Asmaul Husna Al-'Alim? ",["Maha Mengetahui","Maha Pengasih","Maha Kuasa","Maha Mendengar"],0,"Al-'Alim berarti Allah Maha Mengetahui."],
+["Kitab Al-Qur'an diturunkan kepada Nabi ...",["Musa a.s.","Isa a.s.","Muhammad saw.","Daud a.s."],2,"Al-Qur'an diturunkan kepada Nabi Muhammad saw."],
+["Surah Al-Ma'un mengajarkan kita untuk ...",["Menghardik yatim","Peduli kepada yatim dan miskin","Bersikap sombong","Bermalas-malasan"],1,"Surah Al-Ma'un mengingatkan agar peduli kepada anak yatim dan orang miskin."],
+["Sikap jujur disebut juga ...",["Amanah","Sidik","Tablig","Fatanah"],1,"Sidik artinya benar atau jujur."],
+["Zakat fitrah ditunaikan pada bulan ...",["Rajab","Safar","Ramadan","Muharam"],2,"Zakat fitrah ditunaikan pada bulan Ramadan sebelum salat Idulfitri."],
+["Salat Jumat wajib bagi ...",["Semua anak kecil","Laki-laki Muslim yang memenuhi syarat","Semua orang tanpa syarat","Orang yang sedang sakit"],1,"Salat Jumat diwajibkan bagi laki-laki Muslim yang memenuhi syarat."],
+["Sikap menghormati perbedaan disebut ...",["Takabur","Hasad","Tasamuh","Riya"],2,"Tasamuh berarti toleransi atau menghormati perbedaan."],
+["Hari akhir disebut juga ...",["Yaumul Akhir","Yaumul Milad","Yaumul Jumu'ah","Yaumul 'Ilmi"],0,"Yaumul Akhir adalah nama lain hari kiamat."],
+["Contoh perilaku tanggung jawab di sekolah adalah ...",["Menyontek","Melaksanakan piket","Membuang sampah sembarangan","Datang terlambat"],1,"Melaksanakan piket merupakan bentuk tanggung jawab."],
+["Nabi yang mendapat mukjizat membelah laut adalah ...",["Ibrahim a.s.","Yusuf a.s.","Musa a.s.","Nuh a.s."],2,"Dengan izin Allah, Nabi Musa a.s. membelah laut."]
+];
+let player="Pahlawan",qIndex=0,score=0,coins=0,lives=3,paused=false,asking=false,keys={},frame=0;
+let hero={x:45,y:250,vx:0,vy:0,w:28,h:38,on:false};
+let platforms=[{x:0,y:320,w:900,h:40},{x:160,y:260,w:100,h:16},{x:330,y:220,w:100,h:16},{x:500,y:270,w:110,h:16},{x:680,y:220,w:110,h:16}];
+let coinObjs=[{x:195,y:225},{x:365,y:185},{x:540,y:235},{x:725,y:185}],flag={x:835,y:270};
+function begin(){player=document.getElementById('player').value.trim()||"Pahlawan";qIndex=0;score=coins=0;lives=3;document.getElementById('start').classList.add('hidden');document.getElementById('end').classList.add('hidden');document.getElementById('play').classList.remove('hidden');document.getElementById('pname').textContent=player;resetWorld();updateHUD();showPrompt("Jelajahi dunia dan sentuh bendera untuk membuka soal.");requestAnimationFrame(loop);}
+function resetWorld(){hero={x:45,y:250,vx:0,vy:0,w:28,h:38,on:false};coinObjs=[{x:195,y:225},{x:365,y:185},{x:540,y:235},{x:725,y:185}];paused=false;asking=false;}
+function guide(){alert("PETUNJUK:\\n• Bergerak dengan tombol ← → atau A/D.\\n• Lompat dengan Spasi, W, atau ↑.\\n• Kumpulkan koin untuk bonus skor.\\n• Sentuh bendera di ujung jalur untuk menjawab soal PAI.\\n• Jawaban benar mendapat 10 poin. Jawaban salah mengurangi 1 nyawa.\\n• Selesaikan 10 tantangan!");}
+function showPrompt(t){document.getElementById('feedback').textContent=t;}
+function updateHUD(){document.getElementById('coins').textContent=coins;document.getElementById('score').textContent=score;document.getElementById('lives').textContent=lives;document.getElementById('stage').textContent=Math.min(qIndex+1,10)+"/10";}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(x,y,w,h)}
+function draw(){ctx.clearRect(0,0,900,360);
+ // sky and scenery
+ rect(0,0,900,360,"#83dfff");ctx.fillStyle="#fff";for(let i=0;i<5;i++){let x=(i*205+frame*.25)%1000-50;ctx.beginPath();ctx.arc(x,65,19,0,7);ctx.arc(x+22,58,25,0,7);ctx.arc(x+47,67,18,0,7);ctx.fill();}
+ // distant hills
+ ctx.fillStyle="#65bd68";for(let i=0;i<5;i++){ctx.beginPath();ctx.arc(i*230+60,320,100,Math.PI,0);ctx.fill();}
+ platforms.forEach(p=>{rect(p.x,p.y,p.w,p.h,"#9b5b2d");rect(p.x,p.y,p.w,6,"#58b83e");for(let x=p.x+10;x<p.x+p.w;x+=24)rect(x,p.y+9,3,4,"#6d3c20");});
+ coinObjs.forEach(c=>{ctx.fillStyle="#ffd83d";ctx.beginPath();ctx.arc(c.x,c.y,9,0,7);ctx.fill();ctx.strokeStyle="#b77d12";ctx.lineWidth=3;ctx.stroke();});
+ // flag
+ rect(flag.x,flag.y-55,5,55,"#f7f7f7");ctx.fillStyle="#ed4740";ctx.beginPath();ctx.moveTo(flag.x+5,flag.y-55);ctx.lineTo(flag.x+48,flag.y-42);ctx.lineTo(flag.x+5,flag.y-28);ctx.fill();
+ // hero pixel-style original explorer
+ rect(hero.x+6,hero.y,17,8,"#713c21");rect(hero.x+4,hero.y+6,21,8,"#e7a36b");rect(hero.x+3,hero.y+14,23,15,"#2676c8");rect(hero.x+1,hero.y+16,6,12,"#e7a36b");rect(hero.x+22,hero.y+16,7,12,"#e7a36b");rect(hero.x+5,hero.y+28,8,10,"#513c2c");rect(hero.x+17,hero.y+28,8,10,"#513c2c");rect(hero.x+18,hero.y+9,3,3,"#1c2b39");
+ // sparkles
+ ctx.font="18px sans-serif";ctx.fillText("✨",hero.x-8,hero.y-7);
+}
+function loop(){if(document.getElementById('play').classList.contains('hidden'))return;frame++;
+ if(!paused&&!asking){hero.vx=(keys.right?3.2:0)-(keys.left?3.2:0);hero.x+=hero.vx;hero.vy+=.55;hero.y+=hero.vy;hero.x=Math.max(0,Math.min(865,hero.x));hero.on=false;
+ platforms.forEach(p=>{if(hero.x+hero.w>p.x&&hero.x<p.x+p.w&&hero.y+hero.h>=p.y&&hero.y+hero.h<=p.y+18&&hero.vy>=0){hero.y=p.y-hero.h;hero.vy=0;hero.on=true;}});
+ if(hero.y>370){lives--;hero.x=45;hero.y=250;hero.vy=0;updateHUD();if(lives<=0){finish(false);return;}}
+ coinObjs=coinObjs.filter(c=>{if(Math.hypot(hero.x+14-c.x,hero.y+18-c.y)<23){coins++;score+=5;updateHUD();return false;}return true;});
+ if(hero.x>flag.x-25){askQuestion();}
+ }
+ draw();requestAnimationFrame(loop);}
+function askQuestion(){if(asking||qIndex>=10)return;asking=true;paused=true;let q=questions[qIndex];document.getElementById('qnum').textContent=`TANTANGAN ${qIndex+1} DARI 10`;document.getElementById('question').textContent=q[0];let box=document.getElementById('answers');box.innerHTML="";q[1].forEach((a,i)=>{let b=document.createElement('button');b.textContent=String.fromCharCode(65+i)+". "+a;b.onclick=()=>answer(i);box.appendChild(b);});showPrompt("Pilih jawaban yang paling tepat!");document.getElementById('questionBox').scrollIntoView({behavior:"smooth",block:"nearest"});}
+function answer(n){if(!asking)return;let q=questions[qIndex];[...document.querySelectorAll('#answers button')].forEach(b=>b.disabled=true);if(n===q[2]){score+=10;showPrompt("🎉 BENAR! "+q[3]);}else{lives--;showPrompt("Belum tepat. "+q[3]);}qIndex++;updateHUD();if(lives<=0){setTimeout(()=>finish(false),1200);return;}if(qIndex>=10){setTimeout(()=>finish(true),1200);return;}setTimeout(()=>{asking=false;paused=false;hero.x=35;hero.y=250;hero.vy=0;showPrompt("Lanjutkan perjalanan menuju bendera berikutnya!");document.getElementById('answers').innerHTML="";document.getElementById('question').textContent="Terus berpetualang!";},1500);}
+function finish(win){paused=true;document.getElementById('play').classList.add('hidden');let e=document.getElementById('end');e.classList.remove('hidden');e.innerHTML=`<div style="font-size:65px">${win?"🏆🍄⭐":"💫❤️"}</div><h2>${win?"SELAMAT, MISI BERHASIL!":"PETUALANGAN SELESAI"}</h2><h3>${player}</h3><p>Skor akhir: <b style="font-size:32px;color:#21823d">${score}</b></p><p>Koin terkumpul: ${coins} • Tantangan dijawab: ${qIndex}/10</p><p>${score>=90?"Luar biasa! Kamu Juara PAI!":score>=70?"Hebat! Terus tingkatkan ilmu!":"Tetap semangat belajar PAI!"}</p><button onclick="begin()">MAIN LAGI ↻</button> <button onclick="home()">MENU UTAMA</button>`;}
+function restart(){begin();}
+function home(){document.getElementById('play').classList.add('hidden');document.getElementById('end').classList.add('hidden');document.getElementById('start').classList.remove('hidden');}
+document.addEventListener('keydown',e=>{if(["ArrowLeft","ArrowRight","ArrowUp"," "].includes(e.key))e.preventDefault();if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=true;if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=true;if((e.key===" "||e.key==="ArrowUp"||e.key.toLowerCase()==="w")&&hero.on&&!paused)hero.vy=-10.5;});
+document.addEventListener('keyup',e=>{if(e.key==="ArrowLeft"||e.key.toLowerCase()==="a")keys.left=false;if(e.key==="ArrowRight"||e.key.toLowerCase()==="d")keys.right=false;});
+function hold(id,key){let el=document.getElementById(id);el.addEventListener('pointerdown',e=>{e.preventDefault();if(key==="jump"){if(hero.on&&!paused)hero.vy=-10.5;}else keys[key]=true;});["pointerup","pointerleave","pointercancel"].forEach(ev=>el.addEventListener(ev,()=>{if(key!=="jump")keys[key]=false;}));}
+hold("left","left");hold("right","right");hold("jump","jump");
+</script>
+</body></html>
